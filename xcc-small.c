@@ -236,16 +236,55 @@ consume_token (enum token_kind kind)
 //***********************************************************************
 static struct AST* parse_type_specifier(void){
   struct AST *ast;
-  switch (lookahead (0)) {
+  switch (lookahead (1)) {
     case TK_KW_INT:ast = create_AST("type_specifier_INT",0);break;
     case TK_KW_CHAR:ast = create_AST("type_specifier_CHAR",0);break;
     case TK_KW_VOID:ast = create_AST("type_specifier_VOID",0);break;
     case TK_KW_LONG:ast = create_AST("type_specifier_LONG",0);break;
+    default:parse_error();break;
   }
+  next_token ();
+  return ast;
 }
 
 static struct AST* parse_declarator(void){
+  struct AST *ast;
+  next_token ();
+  switch(lookahead(1)){
+    case '(':
+      ast = create_leaf("Leaf_ID_()",strcat(tokens[tokens_index-1].lexeme,"()"));
+      consume_token('(');
+      consume_token(')');
+      break;
+    default:ast = create_leaf("Leaf_ID",tokens[tokens_index-1].lexeme);break;
+  }
+  return ast;
+}
 
+static struct AST* parse_compound_statement(void){
+  struct AST *ast, *ast1, *ast2, *ast3;
+  consume_token('{');
+  ast = create_AST ("parse_compound_statement", 0);
+  while(1){
+    switch(lookahead(1)){
+    case TK_KW_INT: case TK_KW_CHAR: case TK_KW_VOID: case TK_KW_LONG:
+          ast1 = parse_type_specifier ();
+          ast2 = parse_declarator ();
+          consume_token (';');
+          ast3 = create_AST (";", 0);
+          ast = add_AST (ast, 3, ast1, ast2, ast3);
+          break;
+    case '}':
+          consume_token('}');
+          break;
+    //case :"statement"を作れ
+    //case TK_ID: case '{': case TK_KW_IF: case TK_KW_WHILE: case TK_KW_GOTO: case TK_KW_RETURN://あと、expと;の場合
+    default:
+          goto loop_exit;
+    }
+  }
+  loop_exit:
+      return ast;
 }
 //***********************************************************************
 // translation_unit: ( type_specifier declarator ( ";" | compound_statement ))*
@@ -267,7 +306,7 @@ parse_translation_unit (void)
                 ast3 = create_AST (";", 0);
                 break;
             case '{':
-                // ast3 = parse_compound_statement ();
+                ast3 = parse_compound_statement ();
                 break;
             default:
                 parse_error ();
@@ -564,6 +603,7 @@ unparse_AST (struct AST *ast, int depth)
 {
     int i;
     if (!strcmp (ast->ast_type, "translation_unit")) {
+      //printf("translation_unit\n");
         for (i = 0; i < ast->num_child; i++) {
             printf_ns (depth, "");
             unparse_AST (ast->child [i],   depth+1);
@@ -580,9 +620,23 @@ unparse_AST (struct AST *ast, int depth)
             i+=2;
         }
 /*
-  ここにコードを書く
+  ここにコードを書く************************************************************
  */
-    } else {
+    }else if(!strcmp (ast->ast_type, "type_specifier_INT")){
+        printf("int ");
+    }else if(!strcmp (ast->ast_type, "type_specifier_VOID")){
+        printf("void ");
+    }else if(!strcmp (ast->ast_type, "type_specifier_CHAR")){
+        printf("char ");
+    }else if(!strcmp (ast->ast_type, "type_specifier_LONG")){
+        printf("long ");
+    } else if(!strcmp (ast->ast_type, "compound_statement")){
+        printf("int ");
+    }else if((ast->num_child) == 0){
+      printf("%s",ast->lexeme);
+    }
+//***************************************************************************
+    else {
         unparse_error (ast);
     }
 }
