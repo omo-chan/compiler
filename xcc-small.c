@@ -264,7 +264,7 @@ static struct AST* parse_declarator(void){
 static struct AST* parse_compound_statement(void){
   struct AST *ast, *ast1, *ast2, *ast3;
   consume_token('{');
-  ast = create_AST ("parse_compound_statement", 0);
+  ast = create_AST ("compound_statement", 0);
   while(1){
     switch(lookahead(1)){
     case TK_KW_INT: case TK_KW_CHAR: case TK_KW_VOID: case TK_KW_LONG:
@@ -631,7 +631,17 @@ unparse_AST (struct AST *ast, int depth)
     }else if(!strcmp (ast->ast_type, "type_specifier_LONG")){
         printf("long ");
     } else if(!strcmp (ast->ast_type, "compound_statement")){
-        printf("int ");
+        printf("{\n");
+        for (i = 0; i < ast->num_child; i++) {
+          printf("  ");
+          unparse_AST(ast->child [i],   depth+1);
+          unparse_AST(ast->child [i+1],   depth+1);
+          if (!strcmp (ast->child [i+2]->ast_type, ";")) {
+              printf (";\n");
+          }
+          i+=2;
+        }
+        printf("}\n");
     }else if((ast->num_child) == 0){
       printf("%s",ast->lexeme);
     }
