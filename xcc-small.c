@@ -261,6 +261,21 @@ static struct AST* parse_declarator(void){
   return ast;
 }
 
+static struct AST* parse_statement(void){
+  struct AST *ast, *ast1, *ast2, *ast3;
+  switch (lookahead(1)) {
+    case TK_ID://先読み必要
+    case '{':
+    case TK_KW_IF:
+    case TK_KW_WHILE:
+    case TK_KW_GOTO:
+    case TK_KW_RETURN:
+    case ';': case TK_ID:/*先読み必要*/ case TK_INT: case TK_CHAR: case TK_STRING: case '(':
+  }
+  /*今のlookahead(1)は*/
+}
+
+
 static struct AST* parse_compound_statement(void){
   struct AST *ast, *ast1, *ast2, *ast3;
   consume_token('{');
@@ -268,8 +283,8 @@ static struct AST* parse_compound_statement(void){
   while(1){
     switch(lookahead(1)){
     case TK_KW_INT: case TK_KW_CHAR: case TK_KW_VOID: case TK_KW_LONG:
-          ast1 = parse_type_specifier ();
-          ast2 = parse_declarator ();
+          ast1 = parse_type_specifier ();//next_token含む
+          ast2 = parse_declarator ();//next_token含む
           consume_token (';');
           ast3 = create_AST (";", 0);
           ast = add_AST (ast, 3, ast1, ast2, ast3);
@@ -277,8 +292,11 @@ static struct AST* parse_compound_statement(void){
     case '}':
           consume_token('}');
           break;
-    //case :"statement"を作れ
-    //case TK_ID: case '{': case TK_KW_IF: case TK_KW_WHILE: case TK_KW_GOTO: case TK_KW_RETURN://あと、expと;の場合
+    //case :"statement"
+    case TK_ID: case '{': case TK_KW_IF: case TK_KW_WHILE: case TK_KW_GOTO: case TK_KW_RETURN:
+    case ';': case TK_ID: case TK_INT: case TK_CHAR: case TK_STRING: case '(':
+          ast1 = parse_statement();//next_tokenを入れろ
+          ast = add_AST (ast, 1, ast1);
     default:
           goto loop_exit;
     }
