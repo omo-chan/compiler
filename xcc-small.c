@@ -762,8 +762,8 @@ unparse_AST (struct AST *ast, int depth)
                 printf (";\n");
             } else if (!strcmp (ast->child [i+2]->ast_type,
                                 "compound_statement")) {
-                printf ("\n");
-                unparse_AST (ast->child [i+2], depth);
+                //printf ("\n");
+                unparse_AST (ast->child [i+2], depth+1);
             } else {
                 unparse_error (ast);
             }
@@ -782,11 +782,11 @@ unparse_AST (struct AST *ast, int depth)
     }else if(!strcmp (ast->ast_type, "type_specifier_LONG")){
         printf("long ");
     }else if(!strcmp (ast->ast_type, "if")){
-        printf("if ");
+        printf("if");
     }else if(!strcmp (ast->ast_type, "else")){
         printf("else ");
     }else if(!strcmp (ast->ast_type, "while")){
-        printf("while ");
+        printf("while");
     }else if(!strcmp (ast->ast_type, "goto")){
         printf("goto ");
     }else if(!strcmp (ast->ast_type, "return")){
@@ -808,6 +808,7 @@ unparse_AST (struct AST *ast, int depth)
       }
         //printf("");
     }else if(!strcmp (ast->ast_type, "parse_statement")){
+      //printf_ns(depth,"");
         for (i = 0; i < ast->num_child; i++) {
           if ((!strcmp(ast->child[i]->ast_type,"Leaf")) && (i == 0)) {
             unparse_AST(ast->child [i],0);
@@ -817,14 +818,20 @@ unparse_AST (struct AST *ast, int depth)
 
         }
     }else if(!strcmp (ast->ast_type, "compound_statement")){
+        printf("\n");
+        //printf("スペース入れます\n");
+        printf_ns(depth-1,"");
         printf("{\n");//type_specifierとstatementを分けて処理したほうがいいかも
         for (i = 0; i < ast->num_child; i++) {
           if (!strcmp(ast->child[i]->ast_type,"parse_statement")) {
             //printf("  ");
+            printf_ns(depth,"");
             unparse_AST(ast->child [i],   depth+1);
           }else{
             //printf("  ");
-            printf_ns(depth,"  ");
+            //printf("%d\n",depth );
+            //printf("スペース入れます\n");
+            printf_ns(depth,"");
             unparse_AST(ast->child [i],   depth+1);
             unparse_AST(ast->child [i+1],   depth+1);
             if (!strcmp (ast->child [i+2]->ast_type, ";")) {
@@ -833,7 +840,9 @@ unparse_AST (struct AST *ast, int depth)
             i+=2;
           }
         }
-        printf("}");
+        //printf("スペース入れます\n");
+        printf_ns(depth-1,"");
+        printf("}\n");
     }else if(!strcmp (ast->ast_type, "Leaf")){
       printf("%s",ast->lexeme);
     }
