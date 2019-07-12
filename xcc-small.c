@@ -265,21 +265,33 @@ static struct AST* parse_declarator(void){
 }
 
 static struct AST* parse_primary(void){
-  struct AST *ast, *ast1;
+  struct AST *ast, *ast1,*ast05,*ast15;
   ast = create_AST ("parse_primary",0);
   switch (lookahead(1)) {
     case TK_INT: case TK_CHAR: case TK_STRING: case TK_ID:
-    ast1 = create_leaf("Leaf",tokens[tokens_index].lexeme);
+    if (lookahead(0)=='(') {
+      printf("%d",lookahead(0) );
+      ast05 = create_leaf("Leaf","(");
+      ast15 = create_leaf("Leaf",")");
+      ast1 = create_leaf("Leaf",tokens[tokens_index].lexeme);
+      ast = add_AST(ast,3,ast05,ast1,ast15);
+    }else{
+      ast1 = create_leaf("Leaf",tokens[tokens_index].lexeme);
+      ast = add_AST(ast,1,ast1);
+    }
+    //ast1 = create_leaf("Leaf",tokens[tokens_index].lexeme);
+    //ast = add_AST(ast,1,ast1);
     next_token();
     break;
     case '(':
     consume_token('(');
     ast1 = parse_exp();
     consume_token(')');
+    ast = add_AST(ast,1,ast1);
     break;
     default:parse_error();
   }
-  ast = add_AST(ast,1,ast1);
+
   return ast;
 }
 
@@ -300,7 +312,7 @@ static struct AST* parse_exp(void){
 }
 
 static struct AST* parse_statement(void){
-  struct AST *ast, *ast1, *ast2, *ast3, *ast4, *ast5;
+  struct AST *ast, *ast1, *ast2, *ast3, *ast4, *ast5/*,*ast15,*ast25*/;
   ast = create_AST ("parse_statement", 0);
   switch (lookahead(1)) {
     case TK_ID://先読み必要
@@ -325,15 +337,19 @@ static struct AST* parse_statement(void){
       ast1 = create_AST("if",0);
       next_token();
       consume_token('(');
+      //ast15 = create_leaf("Leaf","(");
       ast2 = parse_exp();
       consume_token(')');
+      //ast25 =create_leaf("Leaf",")");
       ast3 = parse_statement();
       if (lookahead(1) == TK_KW_ELSE) {//if else文
         next_token();
         ast4 = create_AST("else",0);
         ast5 = parse_statement();
+        //ast = add_AST(ast,7,ast1,ast15,ast2,ast25,ast3,ast4,ast5);
         ast = add_AST(ast,5,ast1,ast2,ast3,ast4,ast5);
       }else{
+        //ast = add_AST(ast,5,ast1,ast15,ast2,ast25,ast3);
         ast = add_AST(ast,3,ast1,ast2,ast3);
       }
       break;
@@ -352,7 +368,8 @@ static struct AST* parse_statement(void){
       ast2 = create_leaf("Leaf",tokens[tokens_index].lexeme);
       next_token();
       consume_token(';');
-      ast = add_AST(ast,2,ast1,ast2);
+      ast3 = create_AST(";",0);
+      ast = add_AST(ast,3,ast1,ast2,ast3);
       break;
     case TK_KW_RETURN:
       ast1 = create_AST("return",0);
@@ -360,11 +377,13 @@ static struct AST* parse_statement(void){
       if (lookahead(1)==TK_INT ||lookahead(1)==TK_CHAR ||lookahead(1)==TK_STRING ||lookahead(1)==TK_ID ||lookahead(1)=='(') {
         //expの場合
         ast2 = parse_exp();
-        ast = add_AST(ast,2,ast1,ast2);
+        ast3 = create_AST(";",0);
+        ast = add_AST(ast,3,ast1,ast2,ast3);
         consume_token(';');
       }else if(lookahead(1)==';'){
         consume_token(';');
-        ast = add_AST(ast,1,ast1);
+        ast2 = create_AST(";",0);
+        ast = add_AST(ast,2,ast1,ast2);
       }
       break;
     case ';': //[exp];のexpなし
@@ -771,6 +790,7 @@ unparse_AST (struct AST *ast, int depth)
     }else if(!strcmp (ast->ast_type, "goto")){
         printf("goto ");
     }else if(!strcmp (ast->ast_type, "return")){
+        //printf("%d\n",ast->num_child );
         printf("return ");
     }else if(!strcmp (ast->ast_type, ";")){
         printf(";\n");
@@ -778,21 +798,21 @@ unparse_AST (struct AST *ast, int depth)
         printf("()");
     }else if(!strcmp (ast->ast_type, "parse_primary")){
         for (i = 0; i < ast->num_child; i++) {
-          unparse_AST(ast->child [i],   depth+1);
+          unparse_AST(ast->child [i],   depth);
         }
         //printf("");
     }else if(!strcmp (ast->ast_type, "parse_exp")){
+      //printf("%s\n", ast->parent->ast_type);
       for (i = 0; i < ast->num_child; i++) {
-        unparse_AST(ast->child [i],   depth+1);
+        unparse_AST(ast->child [i],   depth);
       }
         //printf("");
     }else if(!strcmp (ast->ast_type, "parse_statement")){
-        //printf("statement:%d\n",ast->num_child);
         for (i = 0; i < ast->num_child; i++) {
           if ((!strcmp(ast->child[i]->ast_type,"Leaf")) && (i == 0)) {
             unparse_AST(ast->child [i],0);
           }else{
-            unparse_AST(ast->child [i],   depth+1);
+            unparse_AST(ast->child [i],   depth);
           }
 
         }
@@ -804,6 +824,7 @@ unparse_AST (struct AST *ast, int depth)
             unparse_AST(ast->child [i],   depth+1);
           }else{
             //printf("  ");
+            printf_ns(depth,"  ");
             unparse_AST(ast->child [i],   depth+1);
             unparse_AST(ast->child [i+1],   depth+1);
             if (!strcmp (ast->child [i+2]->ast_type, ";")) {
